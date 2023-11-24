@@ -2,7 +2,6 @@ package bcm_test
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"path/filepath"
 
 	bcm "github.com/bitcache-tech/bitcache-message"
+	"github.com/libsv/go-bt/v2"
 )
 
 func GetAllFilesFromDirectory(directory string) ([]string, error) {
@@ -37,34 +37,30 @@ func GetAllFilesFromDirectory(directory string) ([]string, error) {
 }
 
 func TestNewBitCacheMessage(t *testing.T) {
+	// Get filename list for test data BitCache messages in binary format
 	files, err := GetAllFilesFromDirectory("../data/bitcache-messages")
 	if err != nil {
 		t.Errorf("Error getting files from directory: %v", err)
 	}
 
 	for _, file := range files {
-		data, err := os.ReadFile(file)
+		// Decode BitCacheMessage from bytes
+		inputBCMBytes, err := os.ReadFile(file)
 		if err != nil {
 			t.Errorf("Error reading file %q: %v", file, err)
 			continue
 		}
-		decoded, err := bcm.NewBitCacheMessage(data)
+		decodedBCM, err := bcm.NewBitCacheMessage(inputBCMBytes)
 		if err != nil {
 			log.Printf("Error decoding file %q: %v", file, err)
 		}
 
-		filename := filepath.Base(file)
-		extension := filepath.Ext(file)
-		filenameWithoutExt := filename[:len(filename)-len(extension)]
-
+		// Get expected Tx and KUMs from JSON and tx bytes files
+		filenameWithoutExt := filepath.Base(file)[:len(filepath.Base(file))-len(filepath.Ext(file))]
 		expectedTxBytes, err := os.ReadFile(fmt.Sprintf("../data/%s.txn", filenameWithoutExt))
 		if err != nil {
 			t.Errorf("Error reading file %q: %v", file, err)
 			continue
-		}
-		if !bytes.Equal(decoded.Tx.Bytes(), expectedTxBytes) {
-			t.Errorf("Decoded BitCacheMessage Tx does not match original for: " + file)
-
 		}
 		expectedJSON, err := os.ReadFile(fmt.Sprintf("../data/%s.json", filenameWithoutExt))
 		if err != nil {
@@ -73,15 +69,70 @@ func TestNewBitCacheMessage(t *testing.T) {
 		}
 		var expectedKUMs []*bcm.KeyUsageMetadata
 		json.Unmarshal(expectedJSON, &expectedKUMs)
-		if !reflect.DeepEqual(decoded.KUMs, expectedKUMs) {
+
+		// Compare decoded BitCacheMessage with expected values
+		if !bytes.Equal(decodedBCM.Tx.Bytes(), expectedTxBytes) {
+			t.Errorf("Decoded BitCacheMessage Tx does not match original for: " + file)
+
+		}
+		if !reflect.DeepEqual(decodedBCM.KUMs, expectedKUMs) {
 			t.Errorf("Decoded BitCacheMessage KUM does not match original for: " + file)
 		}
-
 	}
 
 }
 
-func Test(t *testing.T) {
-	prefix := "TXOKEYS."
-	fmt.Println(hex.EncodeToString([]byte(prefix)))
+func TestBitCacheMessageBytes(t *testing.T) {
+	// Get filename list for test data BitCache messages in binary format
+	files, err := GetAllFilesFromDirectory("../data/bitcache-messages")
+	if err != nil {
+		t.Errorf("Error getting files from directory: %v", err)
+	}
+
+	for _, file := range files {
+		// Get input Tx and KUMs from JSON and tx bytes files
+		filenameWithoutExt := filepath.Base(file)[:len(filepath.Base(file))-len(filepath.Ext(file))]
+		inputTxBytes, err := os.ReadFile(fmt.Sprintf("../data/%s.txn", filenameWithoutExt))
+		if err != nil {
+			t.Errorf("Error reading file %q: %v", file, err)
+			continue
+		}
+		inputJSON, err := os.ReadFile(fmt.Sprintf("../data/%s.json", filenameWithoutExt))
+		if err != nil {
+			t.Errorf("Error reading file %q: %v", file, err)
+			continue
+		}
+
+		// Build BitCacheMessage object from Tx and KUMs
+		inputTx, err := bt.NewTxFromBytes(inputTxBytes)
+		if err != nil {
+			t.Errorf("Error creating Tx from bytes for file %q: %v", file, err)
+			continue
+		}
+		var inputKUMs []*bcm.KeyUsageMetadata
+		json.Unmarshal(inputJSON, &inputKUMs)
+		inputBCM := &bcm.BitCacheMessage{
+			Tx:   inputTx,
+			KUMs: inputKUMs,
+		}
+
+		// Encode BitCacheMessage to bytes
+		encodedData, err := inputBCM.Bytes()
+		if err != nil {
+			t.Errorf("Error regenerating bytes from BitCacheMessage for file %q: %v", file, err)
+			continue
+		}
+
+		// Get original bytes from file
+		originalData, err := os.ReadFile(file)
+		if err != nil {
+			t.Errorf("Error reading file %q: %v", file, err)
+			continue
+		}
+
+		// Compare encoded bytes with original bytes
+		if !bytes.Equal(originalData, encodedData) {
+			t.Errorf("Encoded bytes do not match original bytes for file: %q", file)
+		}
+	}
 }

@@ -78,14 +78,62 @@ func NewBitCacheMessage(bcmBytes []byte) (*BitCacheMessage, error) {
 	}, nil
 }
 
-func (bcm *BitCacheMessage) Bytes() ([]byte, error) {
-	return nil, nil
-}
-
 func readLengthPrefixed(data []byte, cursor uint64) ([]byte, uint64) {
 	lengthPrefixSize := uint64(2)
 	length := binary.LittleEndian.Uint16(data[cursor : cursor+lengthPrefixSize])
 	strStart := cursor + lengthPrefixSize
 	strEnd := strStart + uint64(length)
 	return data[strStart:strEnd], lengthPrefixSize + uint64(length)
+}
+
+func (bcm *BitCacheMessage) Bytes() ([]byte, error) {
+	var buffer bytes.Buffer
+
+	// Write TxChunkPrefix
+	buffer.Write([]byte(TxChunkPrefix))
+
+	// Serialize the transaction and write its length and bytes
+	txBytes := bcm.Tx.Bytes()
+	txChunkSize := uint64(len(txBytes))
+	txSizeBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(txSizeBytes, txChunkSize)
+	buffer.Write(txSizeBytes)
+	buffer.Write(txBytes)
+
+	// Write KUMChunkPrefix
+	buffer.Write([]byte(KUMChunkPrefix))
+
+	// Calculate KUM chunk size and write it later
+	kumSizePos := buffer.Len()
+	buffer.Write(make([]byte, 8)) // Placeholder for KUM chunk size
+
+	// Serialize each KeyUsageMetadata and write to buffer
+	for _, kum := range bcm.KUMs {
+		voutBytes := make([]byte, 4)
+		binary.LittleEndian.PutUint32(voutBytes, kum.Vout)
+		buffer.Write(voutBytes)
+
+		writeLengthPrefixed(&buffer, []byte(kum.ScriptType))
+		kfpBytes, err := hex.DecodeString(kum.KeyFingerprint)
+		if err != nil {
+			return nil, err
+		}
+		writeLengthPrefixed(&buffer, kfpBytes)
+		writeLengthPrefixed(&buffer, []byte(kum.KeyDerivation))
+	}
+
+	// Update KUM chunk size
+	kumChunkSize := uint64(buffer.Len() - kumSizePos - 8)
+	kumSizeBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(kumSizeBytes, kumChunkSize)
+	copy(buffer.Bytes()[kumSizePos:], kumSizeBytes)
+
+	return buffer.Bytes(), nil
+}
+
+func writeLengthPrefixed(buffer *bytes.Buffer, data []byte) {
+	lengthBytes := make([]byte, 2)
+	binary.LittleEndian.PutUint16(lengthBytes, uint16(len(data)))
+	buffer.Write(lengthBytes)
+	buffer.Write(data)
 }
