@@ -11,7 +11,7 @@ import (
 	"log"
 	"path/filepath"
 
-	bcm "github.com/bitcache-tech/bitcache-message"
+	bcm "github.com/bitcache-tech/bitcache-message/go"
 	"github.com/libsv/go-bt/v2"
 )
 

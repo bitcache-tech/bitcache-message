@@ -1,4 +1,4 @@
-module github.com/bitcache-tech/bitcache-message
+module github.com/bitcache-tech/bitcache-message/go
 
 go 1.19
 
