@@ -20,6 +20,14 @@ The Go version of the BitCache Message Library is designed for performance and r
 
 - [Go Implementation README](go/README.md)
 
+### Python Implementation
+
+The Python implementation is intended to be simple and easy to understand:
+
+- **Dependency free**: Uses only features present in the standard library that all Python developers should know or would benefit from knowing about.
+
+- [Python Implementation README](python/README.md)
+
 ### TypeScript/JavaScript Implementation
 
 The TypeScript/JavaScript version of the BitCache Message Library is tailored for flexibility and ease of integration in web applications:
