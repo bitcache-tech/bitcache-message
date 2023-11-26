@@ -1,0 +1,30 @@
+{
+  "name": "bitcache-message",
+  "version": "0.1.0",
+  "description": "A library for serializing and deserializing BitCache messages",
+  "main": "bcm.ts",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitcache-tech/bitcache-message"
+  },
+  "keywords": [
+    "bitcache",
+    "serialization",
+    "deserialization"
+  ],
+  "author": "Jad Wahab",
+  "license": "ISC",
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "fs": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.10",
+    "@types/node": "^20.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1"
+  }
+}
