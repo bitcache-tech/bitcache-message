@@ -42,7 +42,19 @@ const message = BitCacheMessage.fromBytes(binaryData);
 To serialize a BitCache message to a binary format:
 
 ```typescript
-const message = new BitCacheMessage(...); // Your message data here
+const message = new BitCacheMessage("0200000001fffd773dd10fc8e8a556839338643f08382b5a9933555dea9ca0bc4bd49d25070000000049483045022100e204926ff2f9628f15b883e2728383495cc5ac9fdfd9a2a0c50cac5acdd7165e022058c639810ac28595171420eb3e11eca0dcd8a1fa9cd13eeb404a367dd1153ae941ffffffff01804a5d05000000001976a91418392a59fc1f76ad6a3c7ffcea20cfcb17bda9eb88ac00000000",
+    [{
+      vout: 0,
+      script_type: "p2pkh",
+      key_fingerprint: "9341cb4c",
+      key_derivation: "bip32:m/1/20"
+    },
+    {
+      vout: 1,
+      script_type: "p2pkh",
+      key_fingerprint: "9341cb4c",
+      key_derivation: "bip32:m/1/21"
+    }]);
 const binaryData = message.toBytes();
 ```
 
